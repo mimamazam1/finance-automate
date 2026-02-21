@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Financial Automation</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <style>
+    :root {
+      --bg:       #0f172a;
+      --surface:  #1e293b;
+      --surface2: #334155;
+      --accent:   #38bdf8;
+      --green:    #4ade80;
+      --red:      #f87171;
+      --amber:    #fbbf24;
+      --text:     #e2e8f0;
+      --muted:    #94a3b8;
+      --border:   #334155;
+      --radius:   8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    /* ── Header */
+    .header {
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 16px 12px;
+    }
+    .header h1 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.3px;
+    }
+    .header p { color: var(--muted); font-size: 11px; margin-top: 2px; }
+
+    /* ── Tabs */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .tab {
+      flex: 1;
+      padding: 9px 4px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 11px;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* ── Panel */
+    .panel { display: none; padding: 14px 16px; }
+    .panel.active { display: block; }
+
+    /* ── Form elements */
+    label {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 4px;
+      margin-top: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    label:first-child { margin-top: 0; }
+
+    select, input[type="text"], input[type="password"] {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: 8px 10px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    select:focus, input:focus {
+      border-color: var(--accent);
+    }
+
+    /* ── Buttons */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      border-radius: var(--radius);
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-top: 10px;
+      font-family: inherit;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #0f172a;
+    }
+    .btn-primary:hover { background: #7dd3fc; }
+    .btn-primary:disabled { background: var(--surface2); color: var(--muted); cursor: not-allowed; }
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+    }
+    .btn-secondary:hover { background: #475569; }
+    .btn-danger {
+      background: transparent;
+      color: var(--red);
+      border: 1px solid var(--red);
+      margin-top: 6px;
+    }
+
+    /* ── Progress */
+    .progress-wrap {
+      display: none;
+      margin-top: 12px;
+    }
+    .progress-wrap.visible { display: block; }
+    .progress-bar-bg {
+      background: var(--surface2);
+      border-radius: 99px;
+      height: 6px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 99px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+    .progress-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 5px;
+      text-align: center;
+    }
+
+    /* ── Status / Alert */
+    .alert {
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      font-size: 12px;
+      margin-top: 12px;
+      display: none;
+      line-height: 1.5;
+    }
+    .alert.visible { display: block; }
+    .alert-success { background: #14532d40; border: 1px solid #4ade8060; color: var(--green); }
+    .alert-error   { background: #7f1d1d40; border: 1px solid #f8717160; color: var(--red); }
+    .alert-info    { background: #1e3a5f40; border: 1px solid #38bdf860; color: var(--accent); }
+
+    /* ── Stats grid */
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px;
+    }
+    .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+    .stat-value { font-size: 18px; font-weight: 700; margin-top: 2px; }
+    .stat-value.green { color: var(--green); }
+    .stat-value.red   { color: var(--red); }
+    .stat-value.blue  { color: var(--accent); }
+    .stat-value.amber { color: var(--amber); }
+
+    /* ── Rules table */
+    .rules-list {
+      margin-top: 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+    .rule-item {
+      display: flex;
+      align-items: center;
+      padding: 7px 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      gap: 8px;
+    }
+    .rule-item:last-child { border-bottom: none; }
+    .rule-item:nth-child(even) { background: var(--surface); }
+    .rule-keyword { flex: 1; color: var(--accent); font-family: monospace; }
+    .rule-account { flex: 2; color: var(--text); }
+    .rule-delete {
+      color: var(--red);
+      cursor: pointer;
+      opacity: 0.5;
+      font-size: 16px;
+      line-height: 1;
+    }
+    .rule-delete:hover { opacity: 1; }
+
+    .add-rule-form {
+      display: grid;
+      grid-template-columns: 1fr 2fr auto;
+      gap: 6px;
+      margin-top: 8px;
+      align-items: end;
+    }
+    .add-rule-form input { margin-top: 0; font-size: 12px; padding: 6px 8px; }
+    .add-rule-form select { margin-top: 0; font-size: 12px; padding: 6px 8px; }
+    .btn-add {
+      background: var(--green);
+      color: #0f172a;
+      border: none;
+      border-radius: var(--radius);
+      padding: 6px 12px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+      margin-bottom: 10px;
+      margin-top: 18px;
+    }
+    .section-title:first-child { margin-top: 0; }
+
+    .api-hint {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+    .api-hint a { color: var(--accent); text-decoration: none; }
+
+    .badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 99px;
+      text-transform: uppercase;
+    }
+    .badge-green  { background: #14532d; color: var(--green); }
+    .badge-amber  { background: #78350f; color: var(--amber); }
+    .badge-red    { background: #7f1d1d; color: var(--red); }
+    .badge-blue   { background: #1e3a5f; color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚡ Financial Automation</h1>
+  <p>Auto-categorize transactions · Generate P&amp;L &amp; Balance Sheet</p>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('run')">Run</div>
+  <div class="tab" onclick="switchTab('rules')">Rules</div>
+  <div class="tab" onclick="switchTab('settings')">Settings</div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     TAB 1: RUN
+════════════════════════════════════════════ -->
+<div id="tab-run" class="panel active">
+
+  <div class="section-title">Transaction Source</div>
+
+  <label>Sheet with Transactions</label>
+  <select id="sheetSelect">
+    <option value="">— Loading sheets… —</option>
+  </select>
+
+  <label>Period Label (for reports)</label>
+  <input type="text" id="periodLabel" value="Jan–Dec 2024" placeholder="e.g. Q1 2025"/>
+
+  <button class="btn btn-primary" id="btnRun" onclick="runAutomation()">
+    ▶ Categorize &amp; Generate Reports
+  </button>
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progressBar"></div>
+    </div>
+    <div class="progress-label" id="progressLabel">Starting…</div>
+  </div>
+
+  <div class="alert" id="alertBox"></div>
+
+  <div class="stats" id="statsGrid" style="display:none">
+    <div class="stat">
+      <div class="stat-label">Revenue</div>
+      <div class="stat-value green" id="stat-revenue">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Expenses</div>
+      <div class="stat-value red" id="stat-expenses">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Net Income</div>
+      <div class="stat-value" id="stat-net">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Transactions</div>
+      <div class="stat-value blue" id="stat-count">—</div>
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-top:18px">Categorize Only</div>
+  <button class="btn btn-secondary" onclick="runCategorizeOnly()">
+    🏷 Only Add Categories (no report)
+  </button>
+
+</div>
+
+<!-- ════════════════════════════════════════════
+     TAB 2: RULES
+════════════════════════════════════════════ -->
+<div id="tab-rules" class="panel">
+
+  <div class="section-title">Custom Rules</div>
+  <p style="color:var(--muted);font-size:12px;line-height:1.5;margin-bottom:10px">
+    Rules match on keywords in the transaction description (case-insensitive).
+    Rules run before AI — add your specific vendors here.
+  </p>
+
+  <div class="add-rule-form">
+    <input type="text" id="newKeyword" placeholder="keyword" />
+    <input type="text" id="newAccount" placeholder="Account Name" />
+    <button class="btn-add" onclick="addRule()">+</button>
+  </div>
+  <div id="rulesList" class="rules-list"></div>
+
+  <button class="btn btn-secondary" onclick="resetRules()" style="margin-top:12px;font-size:12px">
+    ↺ Reset to Defaults
+  </button>
+
+</div>
+
+<!-- ════════════════════════════════════════════
+     TAB 3: SETTINGS
+════════════════════════════════════════════ -->
+<div id="tab-settings" class="panel">
+
+  <div class="section-title">AI Categorization (Optional)</div>
+
+  <label>Anthropic API Key</label>
+  <input type="password" id="apiKey" placeholder="sk-ant-…"/>
+  <p class="api-hint">
+    Used only for transactions that don't match your rules.
+    Free tier: ~500 categorizations/month.<br>
+    Get a key at <a href="#" onclick="openLink('https://console.anthropic.com')">console.anthropic.com</a>
+  </p>
+
+  <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+  <button class="btn btn-secondary" onclick="testApi()">Test API Connection</button>
+
+  <div class="alert" id="settingsAlert"></div>
+
+  <div class="section-title">About</div>
+  <p style="color:var(--muted);font-size:12px;line-height:1.6">
+    <strong style="color:var(--text)">Financial Automation v1.0</strong><br>
+    Rules engine runs offline. AI fallback uses Anthropic Claude Haiku
+    (cheapest model, ~$0.001 per 10 transactions).<br><br>
+    Sheets created: <span style="color:var(--accent)">Transactions</span> (with categories),
+    <span style="color:var(--accent)">P&amp;L</span>,
+    <span style="color:var(--accent)">Balance Sheet</span>
+  </p>
+
+</div>
+
+<script>
+// ── Imports shimmed inline (webpack will handle proper imports)
+// State
+let customRules = {};
+let apiKey = "";
+
+// ── Init
+Office.onReady(async () => {
+  await loadSheets();
+  loadSettings();
+  renderRules();
+});
+
+// ── Tab switching
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['run','rules','settings'][i] === tab);
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+}
+
+// ── Load sheet names into dropdown
+async function loadSheets() {
+  await Excel.run(async context => {
+    const sheets = context.workbook.worksheets;
+    sheets.load("items/name");
+    await context.sync();
+
+    const sel = document.getElementById("sheetSelect");
+    sel.innerHTML = "";
+    sheets.items.forEach(s => {
+      const skipNames = ["P&L", "Balance Sheet", "P&amp;L"];
+      if (!skipNames.includes(s.name)) {
+        sel.add(new Option(s.name, s.name));
+      }
+    });
+  });
+}
+
+// ── Settings
+function saveSettings() {
+  const key = document.getElementById("apiKey").value.trim();
+  localStorage.setItem("fin_api_key", key);
+  apiKey = key;
+  showAlert("settingsAlert", "success", "✓ Settings saved.");
+}
+
+function loadSettings() {
+  const key = localStorage.getItem("fin_api_key") || "";
+  document.getElementById("apiKey").value = key;
+  apiKey = key;
+}
+
+async function testApi() {
+  const key = document.getElementById("apiKey").value.trim();
+  if (!key) { showAlert("settingsAlert", "error", "Enter an API key first."); return; }
+
+  showAlert("settingsAlert", "info", "Testing connection…");
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+      body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 10, messages: [{ role: "user", content: "Hi" }] }),
+    });
+    if (res.ok) showAlert("settingsAlert", "success", "✓ API connection successful!");
+    else showAlert("settingsAlert", "error", `API error: ${res.status}`);
+  } catch (e) {
+    showAlert("settingsAlert", "error", "Connection failed: " + e.message);
+  }
+}
+
+// ── Rules management
+const DEFAULT_RULES = {
+  "stripe": "Revenue - Sales", "paypal": "Revenue - Sales", "square": "Revenue - Sales",
+  "adp": "Payroll Expenses", "gusto": "Payroll Expenses", "payroll": "Payroll Expenses",
+  "amazon": "Office Supplies", "staples": "Office Supplies",
+  "microsoft": "Software & Subscriptions", "google": "Software & Subscriptions",
+  "slack": "Software & Subscriptions", "zoom": "Software & Subscriptions",
+  "github": "Software & Subscriptions", "aws": "Cloud Infrastructure",
+  "fedex": "COGS - Shipping", "ups": "COGS - Shipping", "usps": "COGS - Shipping",
+  "facebook ads": "Advertising - Social", "google ads": "Advertising - Search",
+  "uber": "Travel - Ground Transport", "lyft": "Travel - Ground Transport",
+  "delta": "Travel - Airfare", "southwest": "Travel - Airfare",
+  "airbnb": "Travel - Lodging", "marriott": "Travel - Lodging",
+  "rent": "Rent & Occupancy", "legal": "Professional Services - Legal",
+};
+
+function loadRules() {
+  const saved = localStorage.getItem("fin_custom_rules");
+  customRules = saved ? JSON.parse(saved) : { ...DEFAULT_RULES };
+}
+
+function saveRules() {
+  localStorage.setItem("fin_custom_rules", JSON.stringify(customRules));
+}
+
+function renderRules() {
+  loadRules();
+  const list = document.getElementById("rulesList");
+  list.innerHTML = "";
+  for (const [kw, account] of Object.entries(customRules)) {
+    const div = document.createElement("div");
+    div.className = "rule-item";
+    div.innerHTML = `
+      <span class="rule-keyword">${kw}</span>
+      <span class="rule-account">${account}</span>
+      <span class="rule-delete" onclick="deleteRule('${kw}')">×</span>
+    `;
+    list.appendChild(div);
+  }
+}
+
+function addRule() {
+  const kw = document.getElementById("newKeyword").value.trim().toLowerCase();
+  const acc = document.getElementById("newAccount").value.trim();
+  if (!kw || !acc) { alert("Enter both a keyword and account name."); return; }
+  customRules[kw] = acc;
+  saveRules();
+  document.getElementById("newKeyword").value = "";
+  document.getElementById("newAccount").value = "";
+  renderRules();
+}
+
+function deleteRule(kw) {
+  delete customRules[kw];
+  saveRules();
+  renderRules();
+}
+
+function resetRules() {
+  if (confirm("Reset all rules to defaults?")) {
+    customRules = { ...DEFAULT_RULES };
+    saveRules();
+    renderRules();
+  }
+}
+
+// ── Main automation runner
+async function runAutomation() {
+  await run(true);
+}
+
+async function runCategorizeOnly() {
+  await run(false);
+}
+
+async function run(generateReports) {
+  const sheetName = document.getElementById("sheetSelect").value;
+  if (!sheetName) { showAlert("alertBox", "error", "Select a sheet first."); return; }
+  const period = document.getElementById("periodLabel").value || "Current Period";
+
+  setProgress(0, "Reading transactions…");
+  toggleBtn(false);
+  hideStats();
+
+  try {
+    await Excel.run(async context => {
+      // 1. Read
+      const { transactions, cols } = await readTransactionsInline(context, sheetName);
+      if (transactions.length === 0) {
+        showAlert("alertBox", "error", "No transactions found. Check that your sheet has Date, Description, and Amount columns.");
+        return;
+      }
+
+      setProgress(15, `Found ${transactions.length} transactions. Running rules engine…`);
+
+      // 2. Categorize
+      const categorizations = await categorizeAllInline(
+        transactions,
+        document.getElementById("apiKey").value.trim(),
+        (p) => setProgress(15 + Math.round(p * 0.65), "Categorizing…")
+      );
+
+      setProgress(80, "Writing categories to sheet…");
+
+      // 3. Write back to sheet
+      await writeCategorizationsInline(context, sheetName, categorizations, cols);
+
+      if (generateReports) {
+        setProgress(85, "Generating P&L…");
+
+        // 4. Aggregate
+        const totals = aggregateInline(transactions, categorizations);
+
+        // 5. Generate P&L
+        const pnlSummary = await generatePnLInline(context, totals, period);
+
+        setProgress(93, "Generating Balance Sheet…");
+
+        // 6. Generate Balance Sheet
+        await generateBalanceSheetInline(context, totals, pnlSummary, period);
+      }
+
+      setProgress(100, "Done!");
+
+      // Show stats
+      const revenue  = transactions.reduce((s, t, i) => categorizations[i]?.type === "revenue" ? s + t.amount : s, 0);
+      const expenses = transactions.reduce((s, t, i) => ["expense","cogs"].includes(categorizations[i]?.type) ? s + t.amount : s, 0);
+
+      showStats({
+        revenue, expenses,
+        net: revenue + expenses,
+        count: transactions.length,
+      });
+
+      showAlert("alertBox", "success",
+        generateReports
+          ? `✓ Done! Sheets created: P&L and Balance Sheet. ${transactions.length} transactions categorized.`
+          : `✓ Done! ${transactions.length} transactions categorized.`
+      );
+    });
+  } catch (e) {
+    showAlert("alertBox", "error", "Error: " + e.message);
+    setProgress(0, "");
+    document.querySelector(".progress-wrap").classList.remove("visible");
+  } finally {
+    toggleBtn(true);
+  }
+}
+
+// ════════════════════════════════════
+// INLINED CORE LOGIC (no module imports needed in taskpane)
+// ════════════════════════════════════
+
+// ── Reader
+async function readTransactionsInline(context, sheetName) {
+  const sheet = context.workbook.worksheets.getItem(sheetName);
+  const usedRange = sheet.getUsedRange();
+  usedRange.load(["values"]);
+  await context.sync();
+
+  const values = usedRange.values;
+  const headerRow = values[0].map(v => String(v).toLowerCase().trim());
+  const cols = detectCols(headerRow);
+  const transactions = [];
+
+  for (let i = 1; i < values.length; i++) {
+    const row = values[i];
+    const desc = String(row[cols.description] ?? "").trim();
+    if (!desc) continue;
+    let amount = 0;
+    if (cols.debit >= 0 && cols.credit >= 0) {
+      amount = parseAmt(row[cols.credit]) - parseAmt(row[cols.debit]);
+    } else {
+      amount = parseAmt(row[cols.amount]);
+    }
+    transactions.push({ date: String(row[cols.date] ?? ""), description: desc, amount, rowIndex: i });
+  }
+  return { transactions, cols };
+}
+
+function detectCols(headers) {
+  const c = { date: -1, description: -1, amount: -1, debit: -1, credit: -1, category: -1 };
+  headers.forEach((h, i) => {
+    if (/date|posted/.test(h)) c.date = i;
+    if (/desc|payee|merchant|vendor|name|memo|narrative/.test(h)) c.description = i;
+    if (/^amount$|^total$|^sum$/.test(h)) c.amount = i;
+    if (/debit|withdrawal|charge/.test(h)) c.debit = i;
+    if (/credit|deposit/.test(h)) c.credit = i;
+    if (/categor|account/.test(h)) c.category = i;
+  });
+  if (c.amount === -1 && c.debit >= 0) c.amount = c.debit;
+  if (c.date === -1) c.date = 0;
+  if (c.description === -1) c.description = 1;
+  if (c.amount === -1) c.amount = 2;
+  return c;
+}
+
+function parseAmt(v) {
+  if (v === null || v === undefined || v === "") return 0;
+  if (typeof v === "number") return v;
+  const s = String(v).replace(/[$,\s]/g, "");
+  if (s.startsWith("(") && s.endsWith(")")) return -(parseFloat(s.slice(1,-1)) || 0);
+  return parseFloat(s) || 0;
+}
+
+// ── Categorizer (rules first, AI fallback)
+async function categorizeAllInline(transactions, apiKey, onProgress) {
+  loadRules();
+  const results = new Array(transactions.length).fill(null);
+  const needsAI = [];
+
+  for (let i = 0; i < transactions.length; i++) {
+    const match = matchRule(transactions[i].description);
+    if (match) results[i] = { ...match, index: i };
+    else needsAI.push({ ...transactions[i], originalIndex: i });
+    if (onProgress) onProgress((i / transactions.length) * 40);
+  }
+
+  if (needsAI.length > 0 && apiKey) {
+    const BATCH = 30;
+    for (let b = 0; b < needsAI.length; b += BATCH) {
+      const batch = needsAI.slice(b, b + BATCH);
+      try {
+        const aiRes = await callAI(batch, apiKey);
+        for (const r of aiRes) {
+          const orig = batch[r.index - 1].originalIndex;
+          results[orig] = { ...r, index: orig, method: "ai" };
+        }
+      } catch (e) {
+        // AI failed — mark as uncategorized
+        for (const t of batch) {
+          results[t.originalIndex] = { index: t.originalIndex, account: "Uncategorized", type: "expense", confidence: "low", method: "failed", notes: e.message };
+        }
+      }
+      if (onProgress) onProgress(40 + ((b + BATCH) / needsAI.length) * 55);
+    }
+  }
+
+  // Fill nulls
+  for (let i = 0; i < results.length; i++) {
+    if (!results[i]) {
+      results[i] = { index: i, account: "Uncategorized", type: "expense", confidence: "low", method: "none", notes: "No AI key set" };
+    }
+  }
+  return results;
+}
+
+function matchRule(description) {
+  const lower = description.toLowerCase();
+  for (const [kw, account] of Object.entries(customRules)) {
+    if (lower.includes(kw)) {
+      return { account, type: inferType(account), confidence: "high", method: "rules", notes: `Matched keyword: "${kw}"` };
+    }
+  }
+  return null;
+}
+
+function inferType(account) {
+  const a = account.toLowerCase();
+  if (a.includes("revenue") || a.includes("sales") || a.includes("income")) return "revenue";
+  if (a.includes("cogs") || a.includes("cost of")) return "cogs";
+  if (a.includes("loan") || a.includes("liability")) return "liability";
+  if (a.includes("asset") || a.includes("bank transfer") || a.includes("cash")) return "asset";
+  return "expense";
+}
+
+async function callAI(transactions, apiKey) {
+  const list = transactions.map((t, i) => `${i+1}. "${t.description}" | ${t.amount}`).join("\n");
+  const prompt = `Categorize these bank transactions into accounting accounts. Reply ONLY with JSON array.\n\n${list}\n\nAccounts: Revenue - Sales, Revenue - Services, COGS - Inventory, COGS - Shipping, Payroll Expenses, Office Supplies, Equipment & Hardware, Software & Subscriptions, Cloud Infrastructure, Advertising - Social, Advertising - Search, Marketing - Email, Rent & Occupancy, Utilities, Travel - Airfare, Travel - Lodging, Travel - Ground Transport, Meals & Entertainment, Professional Services - Legal, Professional Services - Accounting, Interest Expense, Miscellaneous Expense, Bank Transfer\n\nFormat: [{"index":1,"account":"Account Name","type":"revenue|cogs|expense|asset|liability","confidence":"high|medium|low","notes":"reason"}]`;
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 2000, messages: [{ role: "user", content: prompt }] }),
+  });
+  const data = await res.json();
+  const text = data.content[0].text.replace(/```json|```/g, "").trim();
+  return JSON.parse(text);
+}
+
+// ── Write categories back to sheet
+async function writeCategorizationsInline(context, sheetName, cats, cols) {
+  const sheet = context.workbook.worksheets.getItem(sheetName);
+  const usedRange = sheet.getUsedRange();
+  usedRange.load("columnCount");
+  await context.sync();
+
+  let catCol = cols.category >= 0 ? cols.category : usedRange.columnCount;
+  if (cols.category < 0) {
+    sheet.getCell(0, catCol).values = [["Category"]];
+    sheet.getCell(0, catCol + 1).values = [["Confidence"]];
+    sheet.getCell(0, catCol + 2).values = [["Method"]];
+  }
+
+  for (const c of cats) {
+    const r = c.index + 1;
+    sheet.getCell(r, catCol).values = [[c.account]];
+    sheet.getCell(r, catCol + 1).values = [[c.confidence]];
+    sheet.getCell(r, catCol + 2).values = [[c.method || "rules"]];
+    const cell = sheet.getCell(r, catCol);
+    const colors = { high: "#dcfce7", medium: "#fef9c3", low: "#fee2e2" };
+    cell.format.fill.color = colors[c.confidence] || "#f1f5f9";
+  }
+  await context.sync();
+}
+
+// ── Aggregate
+function aggregateInline(transactions, cats) {
+  const totals = {};
+  transactions.forEach((t, i) => {
+    const c = cats[i];
+    if (!c) return;
+    if (!totals[c.account]) totals[c.account] = { type: c.type, total: 0, transactions: 0 };
+    totals[c.account].total += t.amount;
+    totals[c.account].transactions++;
+  });
+  return totals;
+}
+
+// ── P&L Generator
+async function generatePnLInline(context, totals, period) {
+  const name = "P&L";
+  try { context.workbook.worksheets.getItem(name).delete(); await context.sync(); } catch(e){}
+  const sheet = context.workbook.worksheets.add(name);
+
+  const revenue={}, cogs={}, opex={};
+  for (const [a, d] of Object.entries(totals)) {
+    if (d.type==="revenue") revenue[a]=d;
+    else if (d.type==="cogs") cogs[a]=d;
+    else if (d.type==="expense") opex[a]=d;
+  }
+
+  const totalRev  = sum(revenue);
+  const totalCOGS = sum(cogs);
+  const totalOPEX = sum(opex);
+  const grossProfit = totalRev + totalCOGS;
+  const netIncome   = totalRev + totalCOGS + totalOPEX;
+
+  let row = 1;
+  const w = (r, vals, bold=false, bg=null, fg=null, h=18) => {
+    const rng = sheet.getRange(`A${r}:D${r}`);
+    rng.values = [vals];
+    if (bold) rng.format.font.bold = true;
+    if (bg) rng.format.fill.color = bg;
+    if (fg) rng.format.font.color = fg;
+    rng.format.rowHeight = h;
+    if (typeof vals[2]==="number") sheet.getCell(r-1, 2).numberFormat = [["$#,##0.00;($#,##0.00)"]];
+  };
+
+  w(row, [`Profit & Loss — ${period}`], true, "#1a1a2e", "#ffffff", 30); row++;
+  w(row, ["Account","Txns","Amount","% Revenue"], true, "#1e293b", "#e2e8f0", 20); row++;
+
+  const section = (label, items, subtotalLabel, subtotal, bg) => {
+    w(row, [label,"","",""], true, bg, "#fff", 22); row++;
+    let alt=false;
+    for (const [a,d] of Object.entries(items)) {
+      const pct = totalRev ? (d.total/totalRev*100).toFixed(1)+"%" : "—";
+      w(row, [`  ${a}`, d.transactions, d.total, pct], false, alt?"#f8fafc":null);
+      alt=!alt; row++;
+    }
+    const pct = totalRev ? (subtotal/totalRev*100).toFixed(1)+"%" : "—";
+    w(row, [subtotalLabel,"",subtotal,pct], true, "#1e3a5f","#fff",20); row+=2;
+  };
+
+  section("REVENUE", revenue, "Total Revenue", totalRev, "#166534");
+  section("COST OF GOODS SOLD", cogs, "Total COGS", totalCOGS, "#92400e");
+  w(row, ["GROSS PROFIT","",grossProfit, totalRev?(grossProfit/totalRev*100).toFixed(1)+"%":"—"], true, grossProfit>=0?"#14532d":"#7f1d1d","#fff",24); row+=2;
+  section("OPERATING EXPENSES", opex, "Total Expenses", totalOPEX, "#7c2d12");
+  w(row, ["NET INCOME","",netIncome, totalRev?(netIncome/totalRev*100).toFixed(1)+"%":"—"], true, netIncome>=0?"#14532d":"#7f1d1d","#fff",28);
+
+  sheet.getRange("A:A").format.columnWidth = 280;
+  sheet.getRange("B:B").format.columnWidth = 80;
+  sheet.getRange("C:C").format.columnWidth = 130;
+  sheet.getRange("D:D").format.columnWidth = 90;
+  await context.sync();
+
+  return { totalRevenue: totalRev, totalCOGS, grossProfit, totalOPEX, netIncome };
+}
+
+// ── Balance Sheet Generator
+async function generateBalanceSheetInline(context, totals, pnl, period) {
+  const name = "Balance Sheet";
+  try { context.workbook.worksheets.getItem(name).delete(); await context.sync(); } catch(e){}
+  const sheet = context.workbook.worksheets.add(name);
+
+  const assets={}, liab={};
+  for (const [a,d] of Object.entries(totals)) {
+    if (d.type==="asset") assets[a]=d;
+    else if (d.type==="liability") liab[a]=d;
+  }
+  assets["Cash & Bank (net)"] = { total: pnl.netIncome, transactions: 0 };
+
+  let row = 1;
+  const w = (r, vals, bold=false, bg=null, fg=null, h=18) => {
+    const rng = sheet.getRange(`A${r}:C${r}`);
+    rng.values = [vals];
+    if (bold) rng.format.font.bold = true;
+    if (bg) rng.format.fill.color = bg;
+    if (fg) rng.format.font.color = fg;
+    rng.format.rowHeight = h;
+    if (typeof vals[2]==="number") sheet.getCell(r-1, 2).numberFormat = [["$#,##0.00;($#,##0.00)"]];
+  };
+
+  w(row, [`Balance Sheet — ${period}`], true, "#1a1a2e","#fff",30); row++;
+
+  const section = (label, items, subLabel, bg) => {
+    w(row,[label,"",""],true,bg,"#fff",22); row++;
+    let total=0, alt=false;
+    for (const [a,d] of Object.entries(items)) {
+      w(row,[`  ${a}`,"",d.total],false,alt?"#f8fafc":null);
+      total+=d.total; alt=!alt; row++;
+    }
+    w(row,[subLabel,"",total],true,"#1e3a5f","#fff",20); row+=2;
+    return total;
+  };
+
+  const totalAssets = section("ASSETS", assets, "Total Assets", "#1e40af");
+  const totalLiab   = section("LIABILITIES", liab, "Total Liabilities", "#7c2d12");
+  const equity = totalAssets - totalLiab;
+
+  w(row,["EQUITY","",""],true,"#166534","#fff",22); row++;
+  w(row,["  Retained Earnings / Net Income","",pnl.netIncome]); row++;
+  w(row,["Total Equity","",equity],true,"#14532d","#fff",20); row+=2;
+
+  w(row,["✓ Assets = Liabilities + Equity","",totalAssets],true,
+    Math.abs(totalAssets-(totalLiab+equity))<0.01?"#14532d":"#7f1d1d","#fff",22);
+
+  sheet.getRange("A:A").format.columnWidth = 300;
+  sheet.getRange("B:B").format.columnWidth = 60;
+  sheet.getRange("C:C").format.columnWidth = 150;
+  await context.sync();
+}
+
+function sum(obj) { return Object.values(obj).reduce((s,d)=>s+d.total,0); }
+
+// ── UI helpers
+function setProgress(pct, label) {
+  document.querySelector(".progress-wrap").classList.add("visible");
+  document.getElementById("progressBar").style.width = pct + "%";
+  document.getElementById("progressLabel").textContent = label;
+}
+
+function toggleBtn(enabled) {
+  document.getElementById("btnRun").disabled = !enabled;
+}
+
+function showAlert(id, type, msg) {
+  const el = document.getElementById(id);
+  el.className = `alert alert-${type} visible`;
+  el.textContent = msg;
+}
+
+function showStats(data) {
+  const fmt = n => "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  document.getElementById("stat-revenue").textContent = fmt(data.revenue);
+  document.getElementById("stat-expenses").textContent = fmt(data.expenses);
+  const netEl = document.getElementById("stat-net");
+  netEl.textContent = fmt(data.net);
+  netEl.className = "stat-value " + (data.net >= 0 ? "green" : "red");
+  document.getElementById("stat-count").textContent = data.count.toLocaleString();
+  document.getElementById("statsGrid").style.display = "grid";
+}
+
+function hideStats() {
+  document.getElementById("statsGrid").style.display = "none";
+  const a = document.getElementById("alertBox");
+  a.className = "alert"; a.textContent = "";
+}
+
+function openLink(url) { window.open(url, "_blank"); }
+</script>
+</body>
+</html>
